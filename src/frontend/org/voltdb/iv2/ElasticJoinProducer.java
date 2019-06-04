@@ -169,6 +169,11 @@ public class ElasticJoinProducer extends JoinProducerBase implements TaskLog {
         boolean sourcesReady = false;
         RestoreWork restoreWork = m_dataSink.poll(m_snapshotBufferAllocator);
         if (restoreWork != null) {
+            if (m_commaSeparatedNameOfViewsToPause == null) {
+                // Disable views prior to the first restore work being processed
+                initListOfViewsToPause();
+                siteConnection.setViewsEnabled(m_commaSeparatedNameOfViewsToPause, false);
+            }
             restoreBlock(restoreWork, siteConnection);
             sourcesReady = true;
         }
@@ -272,11 +277,6 @@ public class ElasticJoinProducer extends JoinProducerBase implements TaskLog {
 
             applyPerPartitionTxnId(siteConnection);
         } else {
-            if (m_commaSeparatedNameOfViewsToPause == null) {
-                initListOfViewsToPause();
-                // Set enabled to false for the views we found.
-                siteConnection.setViewsEnabled(m_commaSeparatedNameOfViewsToPause, false);
-            }
             runForBlockingDataTransfer(siteConnection);
             return;
         }
